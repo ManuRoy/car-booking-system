@@ -1,6 +1,8 @@
 package car_example.Car_Booking_system.service;
 
 import car_example.Car_Booking_system.config.JwtUtils;
+import car_example.Car_Booking_system.dto.LoginRequest;
+import car_example.Car_Booking_system.dto.LoginResponse;
 import car_example.Car_Booking_system.dto.RegisterRequest;
 import car_example.Car_Booking_system.model.Role;
 import car_example.Car_Booking_system.model.User;
@@ -29,6 +31,18 @@ public class AuthService {
                 .build();
 
         return userRepository.save(user);
+    }
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
+
+        return new LoginResponse(token, user.getName(), user.getEmail(), user.getRole().name());
     }
 
     }
