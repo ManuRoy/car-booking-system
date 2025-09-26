@@ -63,3 +63,7 @@ public class CarService {
     }
 
 }
+
+
+
+// This endpoint returns all cars
