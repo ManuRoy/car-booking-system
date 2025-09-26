@@ -41,6 +41,25 @@ public class CarService {
                 .orElseThrow(() -> new ResourceNotFoundException("Car not found with id: " + id));
     }
 
+    public Car updateCar(Long id, CarDTO carDTO) {
+        Car car = getCarById(id);
 
+        car.setMake(carDTO.getMake() != null ? carDTO.getMake() : car.getMake());
+        car.setModel(carDTO.getModel() != null ? carDTO.getModel() : car.getModel());
+        car.setYear(carDTO.getYear() != null ? carDTO.getYear() : car.getYear());
+        car.setColor(carDTO.getColor() != null ? carDTO.getColor() : car.getColor());
+        car.setRegistrationNumber(carDTO.getRegistrationNumber() != null ? carDTO.getRegistrationNumber() : car.getRegistrationNumber());
+        car.setPricePerDay(carDTO.getPricePerDay() != null ? carDTO.getPricePerDay() : car.getPricePerDay());
+        car.setAvailabilityStatus(carDTO.getAvailabilityStatus() != null ? carDTO.getAvailabilityStatus() : car.getAvailabilityStatus());
+
+        return carRepository.save(car);
+    }
+
+    public void deleteCar(Long id) {
+        if (!carRepository.existsById(id)) {
+            throw new RuntimeException("Car not found to  " + id);
+        }
+        carRepository.deleteById(id);
+    }
 
 }
