@@ -3,27 +3,34 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')  
-        IMAGE_NAME = "manu622/car-booking-system" 
+        IMAGE_NAME = "manu622/car-booking-system"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'develop', url: 'https://github.com/ManuRoy/car-booking-system.git'
+                git branch: 'main', url: 'https://github.com/ManuRoy/car-booking-system.git'
             }
         }
 
         stage('Build JAR') {
             steps {
-                dir('car-booking-system') {
-                    sh './mvnw clean package -DskipTests'
+                dir('car-booking-system/car-booking-system') {
+                    script {
+                        if (fileExists('mvnw')) {
+                            sh 'chmod +x mvnw'
+                            sh './mvnw clean package -DskipTests'
+                        } else {
+                            sh 'mvn clean package -DskipTests'
+                        }
+                    }
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                dir('car-booking-system') {
+                dir('car-booking-system/car-booking-system') {
                     sh """
                     docker build -t $IMAGE_NAME:\$BUILD_NUMBER .
                     """
@@ -33,7 +40,7 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                dir('car-booking-system') {
+                dir('car-booking-system/car-booking-system') {
                     sh """
                     echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
                     docker push $IMAGE_NAME:\$BUILD_NUMBER
