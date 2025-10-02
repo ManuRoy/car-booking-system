@@ -69,7 +69,7 @@ pipeline {
                     docker stop springboot-app || true
                     docker rm springboot-app || true
                     docker pull $IMAGE_NAME:$BUILD_NUMBER
-                    docker run -d --name springboot-app -p 9090:9090 $IMAGE_NAME:$BUILD_NUMBER
+                    docker run -d --name springboot-app -p 1010:9090 $IMAGE_NAME:$BUILD_NUMBER
                 '''
             }
         }
