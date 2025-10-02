@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')  
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
         IMAGE_NAME = "manu622/car-booking-system"
+        APP_DIR = "car-booking-system/car-booking-system"  // folder containing pom.xml, mvnw, Dockerfile
     }
 
     stages {
@@ -15,12 +16,14 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                dir('car-booking-system/car-booking-system') {
+                dir("${APP_DIR}") {
                     script {
+                        // Ensure mvnw is executable
                         if (fileExists('mvnw')) {
                             sh 'chmod +x mvnw'
                             sh './mvnw clean package -DskipTests'
                         } else {
+                            echo "mvnw not found, using system Maven"
                             sh 'mvn clean package -DskipTests'
                         }
                     }
@@ -30,7 +33,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                dir('car-booking-system/car-booking-system') {
+                dir("${APP_DIR}") {
                     sh """
                     docker build -t $IMAGE_NAME:\$BUILD_NUMBER .
                     """
@@ -40,7 +43,7 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                dir('car-booking-system/car-booking-system') {
+                dir("${APP_DIR}") {
                     sh """
                     echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
                     docker push $IMAGE_NAME:\$BUILD_NUMBER
@@ -62,6 +65,15 @@ pipeline {
                 "
                 """
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Pipeline failed! Check the logs."
+        }
+        success {
+            echo "Pipeline completed successfully!"
         }
     }
 }
