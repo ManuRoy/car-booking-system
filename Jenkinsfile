@@ -4,7 +4,6 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
         IMAGE_NAME = "manu622/car-booking-system"
-        APP_DIR = "car-booking-system/car-booking-system"  // folder containing pom.xml, mvnw, Dockerfile
     }
 
     stages {
@@ -14,16 +13,28 @@ pipeline {
             }
         }
 
+        stage('Locate Project Root') {
+            steps {
+                script {
+                    // find the pom.xml location
+                    def pomPath = sh(script: "find . -name 'pom.xml' | head -n 1", returnStdout: true).trim()
+                    if (!pomPath) {
+                        error "No pom.xml found in repo!"
+                    }
+                    env.APP_DIR = pomPath.replace('/pom.xml','')
+                    echo "Using project directory: ${env.APP_DIR}"
+                }
+            }
+        }
+
         stage('Build JAR') {
             steps {
-                dir("${APP_DIR}") {
+                dir("${env.APP_DIR}") {
                     script {
-                        // Ensure mvnw is executable
                         if (fileExists('mvnw')) {
                             sh 'chmod +x mvnw'
                             sh './mvnw clean package -DskipTests'
                         } else {
-                            echo "mvnw not found, using system Maven"
                             sh 'mvn clean package -DskipTests'
                         }
                     }
@@ -33,17 +44,15 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                dir("${APP_DIR}") {
-                    sh """
-                    docker build -t $IMAGE_NAME:\$BUILD_NUMBER .
-                    """
+                dir("${env.APP_DIR}") {
+                    sh "docker build -t $IMAGE_NAME:\$BUILD_NUMBER ."
                 }
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                dir("${APP_DIR}") {
+                dir("${env.APP_DIR}") {
                     sh """
                     echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
                     docker push $IMAGE_NAME:\$BUILD_NUMBER
@@ -70,7 +79,7 @@ pipeline {
 
     post {
         failure {
-            echo "Pipeline failed! Check the logs."
+            echo "Pipeline failed! Check logs."
         }
         success {
             echo "Pipeline completed successfully!"
