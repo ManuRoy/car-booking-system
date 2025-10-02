@@ -15,9 +15,9 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                // Run Maven to build Spring Boot JAR inside target/
-                sh './mvnw clean package -DskipTests'
-            }
+                 dir('car-booking-system') {
+                     sh './mvnw clean package -DskipTests'
+        }
         }
 
         stage('Build Docker Image') {
